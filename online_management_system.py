@@ -78,7 +78,7 @@ class OnlineManagementSystem:
             messagebox.showwarning("Warning", "User not found. Please register.")
             RegisterDialog(self.root, self)
 
-    def register_new_user(self, name, password, address, phone, reg_num, department="Student"):
+    def register_new_user(self, name, password, gender, address, phone, reg_num, department="Student"):
         self.conn.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, 0)", (name, password))
         user_id = self.get_user_id(name)
         self.conn.execute("INSERT INTO complaints (user_id, complaint, department) VALUES (?, ?, ?)", (user_id, f"Address: {address}, Phone: {phone}, Registration Number: {reg_num}", department))
