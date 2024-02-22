@@ -1,6 +1,6 @@
 import tkinter as tk
-from tkinter import messagebox
 from tkinter import ttk
+from tkinter import messagebox
 import sqlite3
 from register_dialog import RegisterDialog
 
@@ -125,37 +125,52 @@ class OnlineManagementSystem:
         self.complaint_listbox_admin = tk.Listbox(self.admin_frame, width=50)
         self.complaint_listbox_admin.grid(row=1, column=1, padx=10, pady=5)
 
+        self.user_info_label = tk.Label(self.admin_frame, text="User Information:")
+        self.user_info_label.grid(row=0, column=2, sticky="w")
+        self.user_info_text = tk.Text(self.admin_frame, width=30, height=10)
+        self.user_info_text.grid(row=1, column=2, padx=10, pady=5)
+
         self.load_normal_users()
 
         self.logout_button = tk.Button(self.admin_frame, text="Logout", command=self.logout)
-        self.logout_button.grid(row=2, column=0, columnspan=2, pady=10)
-
-    def load_normal_users(self):
-        self.user_listbox.delete(0, tk.END)
-        cursor = self.conn.execute("SELECT username FROM users WHERE is_admin = 0")
-        for row in cursor:
-            self.user_listbox.insert(tk.END, row[0])
+        self.logout_button.grid(row=2, column=0, columnspan=3, pady=10)
 
     def load_user_complaints(self, event):
         selected_user = self.user_listbox.get(self.user_listbox.curselection())
         self.complaint_listbox_admin.delete(0, tk.END)
+        self.user_info_text.delete(1.0, tk.END)  
+
         cursor = self.conn.execute("SELECT c.complaint, c.timestamp FROM complaints c JOIN users u ON c.user_id = u.id WHERE u.username = ?", (selected_user,))
         for row in cursor:
             complaint, timestamp = row
             self.complaint_listbox_admin.insert(tk.END, f"{timestamp}: {complaint}")
 
+        user_info = self.conn.execute("SELECT address, phone, registration_number FROM users WHERE username = ?", (selected_user,)).fetchone()
+        if user_info:
+            address, phone, reg_num = user_info
+            self.user_info_text.insert(tk.END, f"Address: {address}\n")
+            self.user_info_text.insert(tk.END, f"Phone: {phone}\n")
+            self.user_info_text.insert(tk.END, f"Registration Number: {reg_num}\n")
+
+    def load_normal_users(self):
+        cursor = self.conn.execute("SELECT username FROM users WHERE is_admin = 0")
+        for row in cursor:
+            username = row[0]
+            self.user_listbox.insert(tk.END, username)
+
     def add_complaint(self):
         complaint = self.complaint_entry.get()
         department = self.department_combobox.get()
-        if complaint and department:  # Check if both complaint and department are provided
+
+        if complaint:
             user_id = self.get_user_id(self.username)
             self.conn.execute("INSERT INTO complaints (user_id, complaint, department) VALUES (?, ?, ?)", (user_id, complaint, department))
             self.conn.commit()
             messagebox.showinfo("Success", "Complaint submitted successfully.")
             self.complaint_entry.delete(0, tk.END)
-            self.load_complaints()
+            self.load_user_complaints(None)
         else:
-            messagebox.showerror("Error", "Please enter a complaint and select a department.")
+            messagebox.showerror("Error", "Please enter a complaint.")
 
     def get_user_id(self, username):
         cursor = self.conn.execute("SELECT id FROM users WHERE username = ?", (username,))
@@ -170,8 +185,8 @@ class OnlineManagementSystem:
             self.admin_frame.destroy()
         elif hasattr(self, 'main_frame'):
             self.main_frame.destroy()
+
         self.create_login_gui()
-        self.login.frame.pack(padx=20, pady=20)
 
 if __name__ == "__main__":
     root = tk.Tk()
