@@ -30,6 +30,15 @@ class OnlineManagementSystem:
                             department TEXT NOT NULL,
                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             FOREIGN KEY (user_id) REFERENCES users(id))''')
+        
+        # New table for user information
+        self.conn.execute('''CREATE TABLE IF NOT EXISTS user_info (
+                            user_id INTEGER PRIMARY KEY,
+                            address TEXT,
+                            phone TEXT,
+                            registration_number TEXT,
+                            FOREIGN KEY (user_id) REFERENCES users(id))''')
+        
         self.conn.commit()
 
         admins = [("Kaif", "yes", 1, "Computer Science and Engineering"),
@@ -81,7 +90,7 @@ class OnlineManagementSystem:
     def register_new_user(self, name, password, gender, address, phone, reg_num, department="Student"):
         self.conn.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, 0)", (name, password))
         user_id = self.get_user_id(name)
-        self.conn.execute("INSERT INTO complaints (user_id, complaint, department) VALUES (?, ?, ?)", (user_id, f"Address: {address}, Phone: {phone}, Registration Number: {reg_num}", department))
+        self.conn.execute("INSERT INTO user_info (user_id, address, phone, registration_number) VALUES (?, ?, ?, ?)", (user_id, address, phone, reg_num))
         self.conn.commit()
         messagebox.showinfo("Success", "User registered successfully. Please log in.")
         self.username_entry.delete(0, tk.END)
@@ -114,11 +123,11 @@ class OnlineManagementSystem:
         self.admin_frame = tk.Frame(self.root)
         self.admin_frame.pack(padx=20, pady=20)
 
-        self.user_label = tk.Label(self.admin_frame, text="Normal User List:")
+        self.user_label = tk.Label(self.admin_frame, text="User List:")
         self.user_label.grid(row=0, column=0, sticky="w")
         self.user_listbox = tk.Listbox(self.admin_frame, height=10)
         self.user_listbox.grid(row=1, column=0, padx=10, pady=5)
-        self.user_listbox.bind("<<ListboxSelect>>", self.load_user_complaints)
+        self.user_listbox.bind("<<ListboxSelect>>", self.load_user_info)
 
         self.complaint_label_admin = tk.Label(self.admin_frame, text="Complaints:")
         self.complaint_label_admin.grid(row=0, column=1, sticky="w")
@@ -127,7 +136,7 @@ class OnlineManagementSystem:
 
         self.user_info_label = tk.Label(self.admin_frame, text="User Information:")
         self.user_info_label.grid(row=0, column=2, sticky="w")
-        self.user_info_text = tk.Text(self.admin_frame, width=30, height=10)
+        self.user_info_text = tk.Text(self.admin_frame, width=60, height=10)  # Expanded width
         self.user_info_text.grid(row=1, column=2, padx=10, pady=5)
 
         self.load_normal_users()
@@ -135,22 +144,23 @@ class OnlineManagementSystem:
         self.logout_button = tk.Button(self.admin_frame, text="Logout", command=self.logout)
         self.logout_button.grid(row=2, column=0, columnspan=3, pady=10)
 
-    def load_user_complaints(self, event):
+    def load_user_info(self, event):
         selected_user = self.user_listbox.get(self.user_listbox.curselection())
         self.complaint_listbox_admin.delete(0, tk.END)
         self.user_info_text.delete(1.0, tk.END)  
 
-        cursor = self.conn.execute("SELECT c.complaint, c.timestamp FROM complaints c JOIN users u ON c.user_id = u.id WHERE u.username = ?", (selected_user,))
+        # Load complaints for the selected user
+        cursor = self.conn.execute("SELECT complaint, timestamp FROM complaints WHERE user_id = (SELECT id FROM users WHERE username = ?)", (selected_user,))
         for row in cursor:
             complaint, timestamp = row
             self.complaint_listbox_admin.insert(tk.END, f"{timestamp}: {complaint}")
 
-        user_info = self.conn.execute("SELECT address, phone, registration_number FROM users WHERE username = ?", (selected_user,)).fetchone()
+        # Load user information for the selected user
+        user_info = self.conn.execute("SELECT address, phone, registration_number FROM user_info WHERE user_id = (SELECT id FROM users WHERE username = ?)", (selected_user,)).fetchone()
         if user_info:
             address, phone, reg_num = user_info
-            self.user_info_text.insert(tk.END, f"Address: {address}\n")
-            self.user_info_text.insert(tk.END, f"Phone: {phone}\n")
-            self.user_info_text.insert(tk.END, f"Registration Number: {reg_num}\n")
+            user_info_text = f"Address: {address}\nPhone: {phone}\nRegistration Number: {reg_num}"
+            self.user_info_text.insert(tk.END, user_info_text)
 
     def load_normal_users(self):
         cursor = self.conn.execute("SELECT username FROM users WHERE is_admin = 0")
@@ -168,7 +178,6 @@ class OnlineManagementSystem:
             self.conn.commit()
             messagebox.showinfo("Success", "Complaint submitted successfully.")
             self.complaint_entry.delete(0, tk.END)
-            self.load_user_complaints(None)
         else:
             messagebox.showerror("Error", "Please enter a complaint.")
 
