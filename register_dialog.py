@@ -54,6 +54,12 @@ class RegisterDialog:
             messagebox.showerror("Error", "Please enter a username.")
             return
 
+        cursor = self.system.conn.execute("SELECT username FROM users WHERE username = ?", (name,))
+        existing_user = cursor.fetchone()
+        if existing_user:
+            messagebox.showerror("Error", "Username already exists. Please choose another username.")
+            return
+
         if password and gender and address and phone and reg_num:
             self.system.register_new_user(name, password, gender, address, phone, reg_num)
             self.dialog.destroy()
