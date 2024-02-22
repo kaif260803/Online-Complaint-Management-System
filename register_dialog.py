@@ -49,20 +49,22 @@ class RegisterDialog:
         address = self.address_entry.get()
         phone = self.phone_entry.get()
         reg_num = self.reg_num_entry.get()
+        department = "Student"  # Default department for registration
 
         if not name:
             messagebox.showerror("Error", "Please enter a username.")
             return
 
-        cursor = self.system.conn.execute("SELECT username FROM users WHERE username = ?", (name,))
-        existing_user = cursor.fetchone()
-        if existing_user:
-            messagebox.showerror("Error", "Username already exists. Please choose another username.")
-            return
-
         if password and gender and address and phone and reg_num:
-            self.system.register_new_user(name, password, gender, address, phone, reg_num)
+            self.system.register_new_user(name, password, department)
             self.dialog.destroy()
         else:
             messagebox.showerror("Error", "Please fill in all fields.")
+
+# Test the dialog
+if __name__ == "__main__":
+    root = tk.Tk()
+    system = None  # Replace with the system instance
+    dialog = RegisterDialog(root, system)
+    root.mainloop()
 
