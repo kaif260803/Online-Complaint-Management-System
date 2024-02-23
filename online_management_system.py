@@ -36,14 +36,21 @@ class OnlineManagementSystem:
                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             FOREIGN KEY (user_id) REFERENCES users(id))''')
 
+        self.conn.execute('''CREATE TABLE IF NOT EXISTS admins (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            username TEXT NOT NULL UNIQUE,
+                            password TEXT NOT NULL,
+                            department TEXT NOT NULL)''')
+
         self.conn.commit()
 
-        admins = [("Kaif", "yes", 1, "Computer Science and Engineering"),
-                  ("Sai", "yes", 1, "Electrical Engineering"),
-                  ("Rohit", "yes", 1, "Automobile Engineering"),
-                  ("Abhi", "yes", 1, "Biotechnology")]
+        # Insert admin data if it doesn't exist
+        admins = [("Kaif", "yes", "Computer Science and Engineering"),
+                  ("Sai", "yes", "Electrical Engineering"),
+                  ("Rohit", "yes", "Automobile Engineering"),
+                  ("Abhi", "yes", "Biotechnology")]
         for admin in admins:
-            self.conn.execute("INSERT OR IGNORE INTO users (username, password, is_admin, department) VALUES (?, ?, ?, ?)", (admin[0], "yes", admin[2], admin[3]))
+            self.conn.execute("INSERT OR IGNORE INTO admins (username, password, department) VALUES (?, ?, ?)", admin)
         self.conn.commit()
 
     def create_login_gui(self):
@@ -63,10 +70,17 @@ class OnlineManagementSystem:
         self.login_button = tk.Button(self.login_frame, text="Login", command=self.login)
         self.login_button.grid(row=2, column=0, columnspan=2, pady=10)
 
+        self.login_button = tk.Button(self.login_frame, text="Register", command=self.open_register_dialog)
+        self.login_button.grid(row=3, column=0, columnspan=2, pady=5)
+
+    def open_register_dialog(self):
+        RegisterDialog(self.root, self)
+
     def login(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
 
+        # Check users table for regular users
         cursor = self.conn.execute("SELECT password, is_admin FROM users WHERE username = ?", (username,))
         row = cursor.fetchone()
 
@@ -78,11 +92,21 @@ class OnlineManagementSystem:
                     self.create_admin_gui()
                 else:
                     self.create_user_gui()
-            else:
-                messagebox.showwarning("Warning", "Incorrect password. Please try again.")
-        else:
-            messagebox.showwarning("Warning", "User not found. Please register.")
-            RegisterDialog(self.root, self)
+                return  # Exit the function after successful login
+
+        # Check admins table for admin users
+        cursor = self.conn.execute("SELECT password FROM admins WHERE username = ?", (username,))
+        row = cursor.fetchone()
+
+        if row:
+            stored_password = row[0]
+            if password == stored_password:
+                self.username = username
+                self.create_admin_gui()
+                return  # Exit the function after successful login
+
+        # If username is not found in either table or password doesn't match
+        messagebox.showwarning("Warning", "User not found or incorrect password. Please try again.")
 
     def register_new_user(self, name, password, department):
         self.conn.execute("INSERT INTO users (username, password, is_admin, department) VALUES (?, ?, 0, ?)", (name, password, department))
@@ -163,10 +187,10 @@ class OnlineManagementSystem:
         self.user_info_text.delete(1.0, tk.END)  
 
         # Load complaints for the selected user
-        cursor = self.conn.execute("SELECT id, complaint, assigned_admin, assigned_department, timestamp FROM complaints WHERE user_id = (SELECT id FROM users WHERE username = ?)", (selected_user,))
+        cursor = self.conn.execute("SELECT complaint, assigned_admin, assigned_department, timestamp FROM complaints WHERE user_id = (SELECT id FROM users WHERE username = ?)", (selected_user,))
         for row in cursor:
-            complaint_id, complaint, assigned_admin, assigned_department, timestamp = row
-            self.complaint_listbox_admin.insert(tk.END, f"ID: {complaint_id}, Assigned to: {assigned_admin}, Department: {assigned_department}, {timestamp}: {complaint}")
+            complaint, assigned_admin, assigned_department, timestamp = row
+            self.complaint_listbox_admin.insert(tk.END, f"Assigned to: {assigned_admin}, Department: {assigned_department}, {timestamp}: {complaint}")
 
         # Load user information for the selected user
         user_info = self.conn.execute("SELECT department FROM users WHERE username = ?", (selected_user,)).fetchone()
@@ -178,7 +202,7 @@ class OnlineManagementSystem:
         selected_department = self.department_combobox_admin.get()
         self.admin_listbox_admin.delete(0, tk.END)
 
-        cursor = self.conn.execute("SELECT username FROM users WHERE is_admin = 1 AND department = ?", (selected_department,))
+        cursor = self.conn.execute("SELECT username FROM admins WHERE department = ?", (selected_department,))
         for row in cursor:
             username = row[0]
             self.admin_listbox_admin.insert(tk.END, username)
@@ -194,10 +218,9 @@ class OnlineManagementSystem:
 
         assigned_department = self.department_combobox_admin.get()
 
-        self.conn.execute("UPDATE complaints SET user_id = (SELECT id FROM users WHERE username = ?), assigned_admin = ?, assigned_department = ? WHERE id = ?", (selected_admin, selected_admin, assigned_department, complaint_id))
+        self.conn.execute("UPDATE complaints SET user_id = (SELECT id FROM admins WHERE username = ?), assigned_admin = ?, assigned_department = ? WHERE id = ?", (selected_admin, selected_admin, assigned_department, complaint_id))
         self.conn.commit()
         messagebox.showinfo("Success", "Complaint assigned successfully.")
-        self.load_user_info(event=None)  # Pass None as event since it's not triggered by an event
 
     def mark_complaint_done(self):
         selected_complaint = self.complaint_listbox_admin.get(tk.ACTIVE)
