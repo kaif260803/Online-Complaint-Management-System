@@ -14,6 +14,7 @@ class OnlineManagementSystem:
         self.create_tables()
 
         self.username = None
+
         self.create_login_gui()
 
     def create_tables(self):
@@ -29,6 +30,8 @@ class OnlineManagementSystem:
                             user_id INTEGER,
                             complaint TEXT NOT NULL,
                             department TEXT NOT NULL,
+                            assigned_admin TEXT,
+                            assigned_department TEXT,
                             status INTEGER DEFAULT 0,
                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             FOREIGN KEY (user_id) REFERENCES users(id))''')
@@ -133,7 +136,7 @@ class OnlineManagementSystem:
 
         self.department_label_admin = tk.Label(self.admin_frame, text="Department:")
         self.department_label_admin.grid(row=2, column=0, sticky="w")
-        self.department_combobox_admin = ttk.Combobox(self.admin_frame, values=["Computer Science and Engineering", "Electrical Engineering", "Automobile Engineering", "Biotechnology"])
+        self.department_combobox_admin = ttk.Combobox(self.admin_frame)
         self.department_combobox_admin.grid(row=2, column=1, padx=10, pady=5)
         self.department_combobox_admin.bind("<<ComboboxSelected>>", self.load_admins)
 
@@ -148,6 +151,7 @@ class OnlineManagementSystem:
         self.mark_done_button = tk.Button(self.admin_frame, text="Mark as Done", command=self.mark_complaint_done)
         self.mark_done_button.grid(row=4, column=2, padx=10, pady=5)
 
+        self.load_departments()  # Load departments for admin assignment
         self.load_normal_users()
 
         self.logout_button = tk.Button(self.admin_frame, text="Logout", command=self.logout)
@@ -159,10 +163,10 @@ class OnlineManagementSystem:
         self.user_info_text.delete(1.0, tk.END)  
 
         # Load complaints for the selected user
-        cursor = self.conn.execute("SELECT complaint, timestamp FROM complaints WHERE user_id = (SELECT id FROM users WHERE username = ?)", (selected_user,))
+        cursor = self.conn.execute("SELECT id, complaint, assigned_admin, assigned_department, timestamp FROM complaints WHERE user_id = (SELECT id FROM users WHERE username = ?)", (selected_user,))
         for row in cursor:
-            complaint, timestamp = row
-            self.complaint_listbox_admin.insert(tk.END, f"{timestamp}: {complaint}")
+            complaint_id, complaint, assigned_admin, assigned_department, timestamp = row
+            self.complaint_listbox_admin.insert(tk.END, f"ID: {complaint_id}, Assigned to: {assigned_admin}, Department: {assigned_department}, {timestamp}: {complaint}")
 
         # Load user information for the selected user
         user_info = self.conn.execute("SELECT department FROM users WHERE username = ?", (selected_user,)).fetchone()
@@ -184,9 +188,16 @@ class OnlineManagementSystem:
         selected_admin = self.admin_listbox_admin.get(tk.ACTIVE)
         complaint_id = selected_complaint.split(":")[0]
 
-        self.conn.execute("UPDATE complaints SET user_id = (SELECT id FROM users WHERE username = ?) WHERE id = ?", (selected_admin, complaint_id))
+        if selected_admin == "":
+            messagebox.showerror("Error", "Please select an admin to assign the complaint.")
+            return
+
+        assigned_department = self.department_combobox_admin.get()
+
+        self.conn.execute("UPDATE complaints SET user_id = (SELECT id FROM users WHERE username = ?), assigned_admin = ?, assigned_department = ? WHERE id = ?", (selected_admin, selected_admin, assigned_department, complaint_id))
         self.conn.commit()
         messagebox.showinfo("Success", "Complaint assigned successfully.")
+        self.load_user_info(event=None)  # Pass None as event since it's not triggered by an event
 
     def mark_complaint_done(self):
         selected_complaint = self.complaint_listbox_admin.get(tk.ACTIVE)
@@ -230,6 +241,10 @@ class OnlineManagementSystem:
             self.main_frame.destroy()
 
         self.create_login_gui()
+
+    def load_departments(self):
+        departments = ["Computer Science and Engineering", "Electrical Engineering", "Automobile Engineering", "Biotechnology"]
+        self.department_combobox_admin['values'] = departments
 
 if __name__ == "__main__":
     root = tk.Tk()
