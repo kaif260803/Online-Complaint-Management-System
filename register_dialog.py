@@ -23,6 +23,7 @@ class RegisterDialog:
         self.gender_label.grid(row=2, column=0, sticky="w")
         self.gender_combobox = ttk.Combobox(self.dialog, values=["Male", "Female", "Other"])
         self.gender_combobox.grid(row=2, column=1, padx=10, pady=5)
+        self.gender_combobox.current(0)  # Set default value
 
         self.address_label = tk.Label(self.dialog, text="Address:")
         self.address_label.grid(row=3, column=0, sticky="w")
@@ -39,8 +40,15 @@ class RegisterDialog:
         self.reg_num_entry = tk.Entry(self.dialog)
         self.reg_num_entry.grid(row=5, column=1, padx=10, pady=5)
 
+        # Department selection dropdown
+        self.department_label = tk.Label(self.dialog, text="Department:")
+        self.department_label.grid(row=6, column=0, sticky="w")
+        self.department_combobox = ttk.Combobox(self.dialog, values=["Computer Science", "Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"])
+        self.department_combobox.grid(row=6, column=1, padx=10, pady=5)
+        self.department_combobox.current(0)  # Set default value
+
         self.register_button = tk.Button(self.dialog, text="Register", command=self.register_user)
-        self.register_button.grid(row=6, column=0, columnspan=2, pady=10)
+        self.register_button.grid(row=7, column=0, columnspan=2, pady=10)
 
     def register_user(self):
         name = self.name_entry.get().strip()  # Strip leading and trailing whitespaces
@@ -49,10 +57,17 @@ class RegisterDialog:
         address = self.address_entry.get()
         phone = self.phone_entry.get()
         reg_num = self.reg_num_entry.get()
-        department = "Student"  # Default department for registration
+        department = self.department_combobox.get()  # Get selected department
 
         if not name:
             messagebox.showerror("Error", "Please enter a username.")
+            return
+
+        # Check if username already exists
+        cursor = self.system.conn.execute("SELECT COUNT(*) FROM users WHERE username = ?", (name,))
+        count = cursor.fetchone()[0]
+        if count > 0:
+            messagebox.showerror("Error", "Username already exists. Please choose a different username.")
             return
 
         if password and gender and address and phone and reg_num:
@@ -61,10 +76,6 @@ class RegisterDialog:
         else:
             messagebox.showerror("Error", "Please fill in all fields.")
 
-# Test the dialog
-if __name__ == "__main__":
-    root = tk.Tk()
-    system = None  # Replace with the system instance
-    dialog = RegisterDialog(root, system)
-    root.mainloop()
+# Sample departments
+sample_departments = ["Computer Science", "Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"]
 
