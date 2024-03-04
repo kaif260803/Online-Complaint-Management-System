@@ -40,11 +40,15 @@ class RegisterDialog:
         self.reg_num_entry = tk.Entry(self.dialog)
         self.reg_num_entry.grid(row=5, column=1, padx=10, pady=5)
 
+        # Fetch department names from the database query
+        cursor = self.conn.execute("SELECT dept_name FROM departments")
+        departments = [row[0] for row in cursor.fetchall()]
+
         self.department_label = tk.Label(self.dialog, text="Department:")
         self.department_label.grid(row=6, column=0, sticky="w")
-        self.department_combobox = ttk.Combobox(self.dialog, values=["Computer Science", "Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"])
+        self.department_combobox = ttk.Combobox(self.dialog, values=departments)
         self.department_combobox.grid(row=6, column=1, padx=10, pady=5)
-        self.department_combobox.current(0)  # Set default value
+        self.department_combobox.current(0)
 
         self.register_button = tk.Button(self.dialog, text="Register", command=self.register_user)
         self.register_button.grid(row=7, column=0, columnspan=2, pady=10)
@@ -72,7 +76,3 @@ class RegisterDialog:
         self.conn.commit()
         messagebox.showinfo("Success", "User registered successfully. Please log in.")
         self.dialog.destroy()
-
-# Sample departments
-sample_departments = ["Computer Science", "Electrical Engineering", "Mechanical Engineering", "Civil Engineering", "Chemical Engineering"]
-
