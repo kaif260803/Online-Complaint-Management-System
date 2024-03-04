@@ -72,6 +72,12 @@ class RegisterDialog:
             messagebox.showerror("Error", "Username already exists. Please choose a different username.")
             return
 
+        cursor = self.conn.execute("SELECT COUNT(*) FROM admins WHERE username = ?", (name,))
+        count = cursor.fetchone()[0]
+        if count > 0:
+            messagebox.showerror("Error", "Username already exists. Please choose a different username.")
+            return
+
         self.conn.execute("INSERT INTO users (username, password, address, phone, registration_number, department, gender, is_admin) VALUES (?, ?, ?, ?, ?, ?, ?, 0)", (name, password, address, phone, reg_num, department, gender))
         self.conn.commit()
         messagebox.showinfo("Success", "User registered successfully. Please log in.")
