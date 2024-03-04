@@ -60,10 +60,10 @@ def create_tables():
                         FOREIGN KEY (dept_id) REFERENCES departments(id))''')
 
     # Insert initial admin data if it doesn't exist
-    admins = [("Kaif", "yes", "Computer Science and Engineering"),
-              ("Sai", "yes", "Electrical Engineering"),
-              ("Rohit", "yes", "Automobile Engineering"),
-              ("Abhi", "yes", "Biotechnology")]
+    admins = [("Kaif", "kaif", "Computer Science and Engineering"),
+              ("Sai", "sai", "Electrical Engineering"),
+              ("Rohit", "rohit", "Automobile Engineering"),
+              ("Abhi", "abhi", "Biotechnology")]
     for admin in admins:
         cursor.execute("INSERT OR IGNORE INTO admins (username, password, department, is_admin) VALUES (?, ?, ?, 1)", admin)
 
