@@ -44,23 +44,30 @@ class GUIUtils:
             messagebox.showwarning("Warning", "Please enter both username and password.")
             return
 
-        # Perform authentication logic here...
-        # Assuming authentication is successful, determine user type and proceed accordingly
-        is_admin = self.check_admin(username)
+        cursor = self.conn.execute("SELECT password, is_admin FROM users WHERE username = ?", (username,))
+        row = cursor.fetchone()
 
-        if is_admin:
-            AdminGUI(self.root, username, self.conn, self)
-            self.login_frame.destroy()
+        cursor = self.conn.execute("SELECT password, is_admin FROM admins WHERE username = ?", (username,))
+        row2 = cursor.fetchone()
+
+        if row:
+            stored_password, is_admin = row 
+            if password == stored_password:
+                self.username = username
+                UserGUI(self.root, username, self.conn, self)
+                self.login_frame.destroy()
+            else:
+                messagebox.showwarning("Warning", "Incorrect password. Please try again.")
+        elif row2:
+            stored_password, is_admin = row2
+            if password == stored_password:
+                self.username = username
+                AdminGUI(self.root, username, self.conn, self)
+                self.login_frame.destroy()
+            else:
+                messagebox.showwarning("Warning", "Incorrect password. Please try again.")
         else:
-            UserGUI(self.root, username, self.conn, self)
-            self.login_frame.destroy()
-
-    def check_admin(self, username):
-        # Perform admin check based on your database or any other criteria
-        # Return True if the user is an admin, False otherwise
-        cursor = self.conn.execute("SELECT COUNT(*) FROM admins WHERE username = ?", (username,))
-        count = cursor.fetchone()[0]
-        return count > 0
+            messagebox.showwarning("Warning", "User not found. Please register.")
 
     def register_new_user(self, name, password, address, phone, reg_num, department, gender):
         try:
