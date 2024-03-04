@@ -20,9 +20,13 @@ class UserGUI:
         self.complaint_entry = tk.Entry(self.user_frame)
         self.complaint_entry.grid(row=0, column=1, padx=10, pady=5)
 
+        # Fetch department names from the database query
+        cursor = self.conn.execute("SELECT dept_name FROM departments")
+        departments = [row[0] for row in cursor.fetchall()]
+
         self.department_label = tk.Label(self.user_frame, text="Department:")
         self.department_label.grid(row=1, column=0, sticky="w")
-        self.department_combobox = ttk.Combobox(self.user_frame, values=["Computer Science and Engineering", "Electrical Engineering", "Automobile Engineering", "Biotechnology"])
+        self.department_combobox = ttk.Combobox(self.user_frame, values=departments)
         self.department_combobox.grid(row=1, column=1, padx=10, pady=5)
         self.department_combobox.current(0)
 
