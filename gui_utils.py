@@ -13,6 +13,10 @@ class GUIUtils:
         self.create_login_gui()
         self.on_logout = None  
 
+    def quit_application(self):
+        self.conn.close() # Closes the database connection
+        self.root.quit()
+
     def open_register_dialog(self):
         RegisterDialog(self.conn)
 
@@ -35,6 +39,9 @@ class GUIUtils:
 
         register_button = tk.Button(self.login_frame, text="Register", command=self.open_register_dialog)
         register_button.grid(row=3, column=0, columnspan=2, pady=5)
+
+        quit_button = tk.Button(self.login_frame, text="Quit", command=self.quit_application)
+        quit_button.grid(row=4, column=0, columnspan=2, pady=5)
 
     def login(self):
         username = self.username_entry.get().strip()
