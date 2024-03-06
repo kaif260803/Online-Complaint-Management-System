@@ -33,8 +33,14 @@ class UserGUI:
         self.submit_button = tk.Button(self.user_frame, text="Submit", command=self.add_complaint)
         self.submit_button.grid(row=2, column=0, columnspan=2, pady=10)
 
+        self.complaints_label = tk.Label(self.user_frame, text="Your Complaints:")
+        self.complaints_label.grid(row=3, column=0, columnspan=2, pady=5)
+
+        self.complaints_text = tk.Text(self.user_frame, height=10, width=50)
+        self.complaints_text.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
+
         self.logout_button = tk.Button(self.user_frame, text="Logout", command=self.logout)
-        self.logout_button.grid(row=3, column=0, columnspan=2, pady=10)
+        self.logout_button.grid(row=5, column=0, columnspan=2, pady=10)
 
     def add_complaint(self):
         complaint = self.complaint_entry.get()
@@ -51,6 +57,22 @@ class UserGUI:
             self.complaint_entry.delete(0, tk.END)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to submit complaint: {e}")
+
+    def update_complaints_text(self):
+        try:
+            user_id = self.gui_utils.get_user_id(self.username)
+            cursor = self.conn.execute("SELECT complaint, department FROM complaints WHERE user_id=?", (user_id,))
+            complaints = cursor.fetchall()
+            if complaints:
+                complaints_text = "\n".join(f"Complaint: {complaint}, Department: {department}" for complaint, department in complaints)
+            else:
+                complaints_text = "No complaints found."
+            self.complaints_text.config(state='normal')
+            self.complaints_text.delete(1.0, tk.END)
+            self.complaints_text.insert(tk.END, complaints_text)
+            self.complaints_text.config(state='disabled')
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to fetch complaints: {e}")
 
     def logout(self):
         self.user_frame.destroy()
