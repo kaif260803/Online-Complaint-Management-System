@@ -36,11 +36,13 @@ class UserGUI:
         self.complaints_label = tk.Label(self.user_frame, text="Your Complaints:")
         self.complaints_label.grid(row=3, column=0, columnspan=2, pady=5)
 
-        self.complaints_text = tk.Text(self.user_frame, height=10, width=50)
+        self.complaints_text = tk.Text(self.user_frame, height=10, width=200)
         self.complaints_text.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
 
         self.logout_button = tk.Button(self.user_frame, text="Logout", command=self.logout)
         self.logout_button.grid(row=5, column=0, columnspan=2, pady=10)
+
+        self.update_complaints_text()
 
     def add_complaint(self):
         complaint = self.complaint_entry.get()
@@ -61,10 +63,15 @@ class UserGUI:
     def update_complaints_text(self):
         try:
             user_id = self.gui_utils.get_user_id(self.username)
-            cursor = self.conn.execute("SELECT complaint, department FROM complaints WHERE user_id=?", (user_id,))
+            cursor = self.conn.execute("SELECT complaint, department, assigned_admin, status FROM complaints WHERE user_id=?", (user_id,))
             complaints = cursor.fetchall()
             if complaints:
-                complaints_text = "\n".join(f"Complaint: {complaint}, Department: {department}" for complaint, department in complaints)
+                complaints_text = ""
+                for complaint, department, assigned_admin, status in complaints:
+                    assigned_to = "Assigned to: " + assigned_admin if assigned_admin else "Assigned to: None"
+                    complaint_info = f"Complaint: {complaint}, Department: {department}, {assigned_to}"
+                    status_info = "Done" if status else "Not Done"
+                    complaints_text += f"{complaint_info}, {status_info}\n"
             else:
                 complaints_text = "No complaints found."
             self.complaints_text.config(state='normal')
