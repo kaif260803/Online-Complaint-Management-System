@@ -30,7 +30,7 @@ class AdminGUI:
         self.assign_label.grid(row=2, column=0, sticky="w")
 
         # Fetch complaint list from the database query
-        cursor = self.conn.execute("SELECT id, complaint FROM complaints")
+        cursor = self.conn.execute("SELECT id, complaint FROM complaints WHERE status = 0")
         complaints = [f"{row[0]}: {row[1]}" for row in cursor.fetchall()]
 
         self.complaint_combobox.set("Select complaint")
@@ -69,16 +69,17 @@ class AdminGUI:
         if not selected_user:
             return
 
-        cursor = self.conn.execute("SELECT id, username, address, phone, registration_number, department FROM users WHERE username = ?", (selected_user,))
+        cursor = self.conn.execute("SELECT id, username, address, phone, gender, registration_number, department FROM users WHERE username = ?", (selected_user,))
         user_info = cursor.fetchone()
 
         if user_info:
-            user_id, username, address, phone, registration_number, department = user_info
+            user_id, username, address, phone, gender, registration_number, department = user_info
             self.user_info_text.config(state=tk.NORMAL)  # Allow modifications temporarily
             self.user_info_text.delete(1.0, tk.END)
             self.user_info_text.insert(tk.END, f"Name: {username}\n")
             self.user_info_text.insert(tk.END, f"Address: {address}\n")
             self.user_info_text.insert(tk.END, f"Phone Number: {phone}\n")
+            self.user_info_text.insert(tk.END, f"Gender: {gender}\n")
             self.user_info_text.insert(tk.END, f"Registration Number: {registration_number}\n")
             self.user_info_text.insert(tk.END, f"Department: {department}\n")
             self.user_info_text.config(state=tk.DISABLED)  # Make it read-only again
