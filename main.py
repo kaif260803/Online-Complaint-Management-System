@@ -1,7 +1,7 @@
 import tkinter as tk
 import sqlite3
-from gui_utils import GUIUtils
-from create_tables import create_tables
+from src.gui_utils import GUIUtils
+from src.create_tables import create_tables
 
 def main():
     create_tables()
