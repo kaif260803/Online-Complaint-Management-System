@@ -33,7 +33,12 @@ class AdminGUI:
         cursor = self.conn.execute("SELECT id, complaint FROM complaints WHERE status = 0")
         complaints = [f"{row[0]}: {row[1]}" for row in cursor.fetchall()]
 
-        self.complaint_combobox.set("Select complaint")
+        if not complaints:
+            complaints = ["Select complaint"]
+
+        self.complaint_combobox.set(complaints[0])  # Set initial value
+
+        # Create OptionMenu with complaints list
         self.complaint_dropdown = tk.OptionMenu(self.admin_frame, self.complaint_combobox, *complaints)
         self.complaint_dropdown.grid(row=2, column=1, padx=10, pady=5)
 
@@ -89,21 +94,28 @@ class AdminGUI:
 
     def load_user_complaints(self, user_id):
         # Fetch complaint list for the selected user from the database query
-        cursor = self.conn.execute("SELECT id, complaint, status, assigned_admin FROM complaints WHERE user_id = ?", (user_id,))
+        cursor = self.conn.execute("SELECT id, complaint, status, assigned_admin, timestamp FROM complaints WHERE user_id = ?", (user_id,))
         complaints = []
         for row in cursor.fetchall():
-            if row[2]:  # If complaint is marked as done
-                complaint_info = f"{row[0]}: {row[1]}: Done by {row[3]}"
+            complaint_id, complaint_text, status, assigned_admin, timestamp = row
+            if status:  # If complaint is marked as done
+                complaint_info = f"{complaint_id}: {complaint_text}: Done by {assigned_admin} ({timestamp})"
             else:  # If complaint is not done
-                if row[3]:  # If complaint is assigned to an admin
-                    complaint_info = f"{row[0]}: {row[1]}: Not done, assigned to {row[3]}"
+                if assigned_admin:  # If complaint is assigned to an admin
+                    complaint_info = f"{complaint_id}: {complaint_text}: Not done, assigned to {assigned_admin} ({timestamp})"
                 else:  # If complaint is not assigned to anyone
-                    complaint_info = f"{row[0]}: {row[1]}: Not done, not assigned"
+                    complaint_info = f"{complaint_id}: {complaint_text}: Not done, not assigned ({timestamp})"
             complaints.append(complaint_info)
 
         self.complaint_listbox_admin.delete(0, tk.END)  # Clear previous complaints
-        for complaint in complaints:
-            self.complaint_listbox_admin.insert(tk.END, complaint)
+        if complaints:
+            for complaint in complaints:
+                self.complaint_listbox_admin.insert(tk.END, complaint)
+        else:
+            self.complaint_listbox_admin.insert(tk.END, "No complaints")
+
+        # Set the default value for OptionMenu
+        self.complaint_combobox.set("No complaints")
 
     def mark_complaint_done(self):
         selected_complaint = self.complaint_listbox_admin.get(tk.ACTIVE)
