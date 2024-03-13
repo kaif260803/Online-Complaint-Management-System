@@ -70,7 +70,7 @@ class UserGUI:
                 for complaint, department, assigned_admin, status in complaints:
                     assigned_to = "Assigned to: " + assigned_admin if assigned_admin else "Assigned to: None"
                     complaint_info = f"Complaint: {complaint}, Department: {department}, {assigned_to}"
-                    status_info = "Done" if status else "Not Done"
+                    status_info = "Status: " + 'Done' if status else 'Not Done'
                     complaints_text += f"{complaint_info}, {status_info}\n"
             else:
                 complaints_text = "No complaints found."
