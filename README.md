@@ -58,15 +58,15 @@ The Online Complaint Management System allows users to register complaints onlin
 
 ## Screenshots
 
-![Image 1](images/image1.jpg)
+![Image 1](images/image1.png)
 
-![Image 2](images/image2.jpg)
+![Image 2](images/image2.png)
 
-![Image 3](images/image3.jpg)
+![Image 3](images/image3.png)
 
-![Image 4](images/image4.jpg)
+![Image 4](images/image4.png)
 
-![Image 5](images/image5.jpg)
+![Image 5](images/image5.png)
 
 ## Contributing
 
